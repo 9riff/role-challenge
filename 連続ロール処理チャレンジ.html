@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>太鼓の達人風リズムゲーム</title>
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --don-red: #e63946; --don-red-dark: #c1121f;
+            --ka-blue: #4895ef; --ka-blue-dark: #3a86ff;
+            --gold: #ffd60a; --gold-dark: #ffc300;
+            --bg-orange: #ff9f1c; --bg-orange-light: #ffbf69;
+            --wood-brown: #8b4513; --wood-light: #d2691e;
+            --success-green: #2ec4b6; --miss-pink: #ff006e;
+            --white: #ffffff; --black: #1a1a2e;
+        }
+        body {
+            font-family: 'Zen Maru Gothic', sans-serif;
+            background: linear-gradient(135deg, var(--bg-orange) 0%, var(--bg-orange-light) 50%, var(--gold) 100%);
+            min-height: 100vh; overflow-x: hidden; position: relative;
+        }
+        body::before {
+            content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background-image: radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(255,255,255,0.05) 20px, rgba(255,255,255,0.05) 40px);
+            pointer-events: none; z-index: 0;
+        }
+        .container {
+            position: relative; z-index: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; min-height: 100vh; padding: 20px;
+        }
+        .screen { display: none; width: 100%; max-width: 1200px; animation: fadeIn 0.5s ease-out; }
+        .screen.active { display: flex; flex-direction: column; align-items: center; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .title-logo { text-align: center; margin-bottom: 30px; }
+        .title-main {
+            font-size: 3.5rem; font-weight: 900; color: var(--white);
+            text-shadow: 4px 4px 0 var(--don-red), 8px 8px 0 var(--don-red-dark), 12px 12px 20px rgba(0,0,0,0.3);
+            letter-spacing: 0.1em; animation: titleBounce 2s ease-in-out infinite;
+        }
+        @keyframes titleBounce { 0%, 100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-10px) rotate(1deg); } }
+        .title-sub { font-size: 1.3rem; color: var(--wood-brown); margin-top: 10px; font-weight: 700; }
+        .settings-panel { background: rgba(255,255,255,0.95); border-radius: 20px; padding: 30px; margin: 20px 0; box-shadow: 0 10px 30px rgba(0,0,0,0.2); width: 100%; max-width: 600px; }
+        .setting-group { margin-bottom: 25px; }
+        .setting-label { font-size: 1.2rem; font-weight: 700; color: var(--wood-brown); margin-bottom: 10px; display: block; }
+        .mode-buttons { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+        .mode-btn {
+            font-family: 'Zen Maru Gothic', sans-serif; font-size: 1.2rem; font-weight: 900;
+            padding: 15px 30px; border: 4px solid transparent; border-radius: 20px; cursor: pointer;
+            transition: all 0.2s ease; background: var(--white); color: var(--wood-brown);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .mode-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
+        .mode-btn.selected {
+            border-color: var(--don-red); background: linear-gradient(180deg, #fff5f5 0%, #ffe0e0 100%);
+            color: var(--don-red); transform: scale(1.05);
+        }
+        .speed-control { display: flex; flex-direction: column; gap: 10px; }
+        .speed-slider { width: 100%; height: 8px; border-radius: 5px; background: #ddd; outline: none; -webkit-appearance: none; }
+        .speed-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%; background: var(--don-red); cursor: pointer; }
+        .speed-slider::-moz-range-thumb { width: 24px; height: 24px; border-radius: 50%; background: var(--don-red); cursor: pointer; border: none; }
+        .speed-display { text-align: center; font-size: 1.5rem; font-weight: 900; color: var(--don-red); }
+        .btn {
+            font-family: 'Zen Maru Gothic', sans-serif; font-size: 1.8rem; font-weight: 900;
+            padding: 20px 60px; border: none; border-radius: 50px; cursor: pointer;
+            transition: all 0.2s ease; position: relative; overflow: hidden;
+        }
+        .btn-primary {
+            background: linear-gradient(180deg, var(--don-red) 0%, var(--don-red-dark) 100%);
+            color: var(--white); box-shadow: 0 6px 0 #8b0000, 0 10px 20px rgba(0,0,0,0.3);
+        }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 9px 0 #8b0000, 0 15px 30px rgba(0,0,0,0.3); }
+        .btn-primary:active { transform: translateY(3px); box-shadow: 0 3px 0 #8b0000, 0 5px 10px rgba(0,0,0,0.3); }
+        .btn-secondary {
+            background: linear-gradient(180deg, var(--ka-blue) 0%, var(--ka-blue-dark) 100%);
+            color: var(--white); box-shadow: 0 6px 0 #1a5fb4, 0 10px 20px rgba(0,0,0,0.3);
+            font-size: 1.3rem; padding: 15px 40px;
+        }
+        .btn-secondary:hover { transform: translateY(-3px); box-shadow: 0 9px 0 #1a5fb4, 0 15px 30px rgba(0,0,0,0.3); }
+        .btn-secondary:active { transform: translateY(3px); box-shadow: 0 3px 0 #1a5fb4, 0 5px 10px rgba(0,0,0,0.3); }
+        .game-header { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; }
+        .info-display {
+            background: rgba(255,255,255,0.95); padding: 12px 25px; border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2); flex: 1; text-align: center;
+        }
+        .info-label { font-size: 0.85rem; color: var(--wood-brown); font-weight: 700; }
+        .info-value { font-size: 2rem; font-weight: 900; }
+        .score-value { color: var(--don-red); }
+        .combo-value { color: var(--gold-dark); }
+        .timer-value { color: var(--ka-blue); }
+        .timer-value.warning { color: var(--miss-pink); animation: timerPulse 0.5s ease-in-out infinite; }
+        @keyframes timerPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        .game-area {
+            background: linear-gradient(180deg, #2a2a4a 0%, #1a1a2e 100%);
+            border-radius: 25px; padding: 40px 20px; width: 100%; position: relative;
+            box-shadow: inset 0 5px 20px rgba(0,0,0,0.5), 0 10px 40px rgba(0,0,0,0.3);
+            height: 400px; overflow: hidden;
+        }
+        .game-area::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px;
+            background: linear-gradient(90deg, var(--don-red), var(--gold), var(--ka-blue));
+        }
+        .notes-lane {
+            position: absolute; top: 50%; left: 0; right: 0; height: 150px;
+            transform: translateY(-50%);
+        }
+        .judgment-line {
+            position: absolute; left: 20%; top: 50%; transform: translateY(-50%);
+            width: 4px; height: 200px; background: linear-gradient(180deg, transparent, var(--gold), transparent);
+            box-shadow: 0 0 20px var(--gold);
+            z-index: 10;
+        }
+        .judgment-circle {
+            position: absolute; left: 20%; top: 50%; transform: translate(-50%, -50%);
+            width: 120px; height: 120px; border-radius: 50%;
+            border: 6px solid var(--gold);
+            background: radial-gradient(circle at 30% 30%, rgba(255,214,10,0.3), rgba(255,214,10,0.1));
+            box-shadow: 0 0 30px rgba(255,214,10,0.5), inset 0 0 30px rgba(255,214,10,0.2);
+            z-index: 9;
+        }
+        .note {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            width: 70px; height: 70px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; font-weight: 900; color: var(--white);
+            transition: transform 0.1s ease;
+        }
+        .note.don {
+            background: radial-gradient(circle at 30% 30%, #ff6b6b, var(--don-red));
+            box-shadow: 0 4px 0 var(--don-red-dark), 0 6px 15px rgba(230,57,70,0.5);
+        }
+        .note.ka {
+            background: radial-gradient(circle at 30% 30%, #74c0fc, var(--ka-blue));
+            box-shadow: 0 4px 0 var(--ka-blue-dark), 0 6px 15px rgba(72,149,239,0.5);
+        }
+        .note.hit-good { animation: hitGood 0.3s ease-out forwards; }
+        .note.hit-ok { animation: hitOk 0.3s ease-out forwards; }
+        .note.hit-miss { animation: hitMiss 0.3s ease-out forwards; }
+        @keyframes hitGood { 0% { transform: translateY(-50%) scale(1); } 50% { transform: translateY(-50%) scale(1.3); } 100% { transform: translateY(-50%) scale(0); opacity: 0; } }
+        @keyframes hitOk { 0% { transform: translateY(-50%) scale(1); } 50% { transform: translateY(-50%) scale(1.2); } 100% { transform: translateY(-50%) scale(0); opacity: 0; } }
+        @keyframes hitMiss { 0% { transform: translateY(-50%) translateX(0); } 25% { transform: translateY(-50%) translateX(-5px); } 75% { transform: translateY(-50%) translateX(5px); } 100% { transform: translateY(-50%) translateX(0); opacity: 0.3; } }
+        .feedback {
+            position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 3rem; font-weight: 900; pointer-events: none; opacity: 0; z-index: 100;
+        }
+        .feedback.show { animation: feedbackPop 0.6s ease-out forwards; }
+        .feedback.good { color: var(--gold); text-shadow: 3px 3px 0 var(--white), 0 0 20px var(--gold); }
+        .feedback.ok { color: var(--success-green); text-shadow: 3px 3px 0 var(--white); }
+        .feedback.miss { color: var(--miss-pink); text-shadow: 3px 3px 0 var(--white); }
+        @keyframes feedbackPop { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); } 20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); } 100% { opacity: 0; transform: translate(-50%, -70%) scale(1); } }
+        .key-guide {
+            background: rgba(255,255,255,0.95); border-radius: 20px; padding: 20px 30px;
+            margin-top: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .key-guide h3 { text-align: center; color: var(--wood-brown); margin-bottom: 15px; font-size: 1.2rem; }
+        .key-row { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
+        .key-item { display: flex; align-items: center; gap: 8px; background: #f8f8f8; padding: 8px 12px; border-radius: 10px; }
+        .key-pattern { font-weight: 900; font-size: 1rem; }
+        .key-pattern.don { color: var(--don-red); }
+        .key-pattern.ka { color: var(--ka-blue); }
+        .key-buttons { display: flex; gap: 5px; }
+        .key-btn { background: var(--black); color: var(--white); padding: 5px 10px; border-radius: 5px; font-weight: 700; font-size: 0.85rem; }
+        .result-card { background: rgba(255,255,255,0.98); border-radius: 30px; padding: 40px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 500px; width: 100%; }
+        .result-title { font-size: 2.2rem; font-weight: 900; color: var(--wood-brown); margin-bottom: 10px; }
+        .result-mode { font-size: 1.1rem; color: var(--ka-blue); font-weight: 700; margin-bottom: 15px; }
+        .result-score-label { font-size: 1.1rem; color: #666; margin-top: 15px; }
+        .result-score { font-size: 4.5rem; font-weight: 900; color: var(--don-red); text-shadow: 4px 4px 0 #ffd6d9; line-height: 1; }
+        .result-stats { display: flex; justify-content: center; gap: 25px; margin: 25px 0; flex-wrap: wrap; }
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 1.8rem; font-weight: 900; }
+        .stat-value.good { color: var(--gold); }
+        .stat-value.ok { color: var(--success-green); }
+        .stat-value.miss { color: var(--miss-pink); }
+        .stat-label { font-size: 0.85rem; color: #666; }
+        .nickname-input-area { margin: 25px 0; }
+        .nickname-input-area label { display: block; font-size: 1rem; font-weight: 700; color: var(--wood-brown); margin-bottom: 10px; }
+        .nickname-input { font-family: 'Zen Maru Gothic', sans-serif; font-size: 1.3rem; padding: 12px 20px; border: 4px solid var(--bg-orange); border-radius: 15px; width: 100%; max-width: 280px; text-align: center; outline: none; transition: border-color 0.3s; }
+        .nickname-input:focus { border-color: var(--don-red); }
+        .result-buttons { display: flex; flex-direction: column; gap: 12px; align-items: center; }
+        .ranking-card { background: rgba(255,255,255,0.98); border-radius: 30px; padding: 35px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 600px; width: 100%; }
+        .ranking-title { text-align: center; font-size: 2.2rem; font-weight: 900; color: var(--wood-brown); margin-bottom: 20px; }
+        .ranking-title span { color: var(--gold); text-shadow: 2px 2px 0 var(--bg-orange); }
+        .ranking-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .ranking-tab { font-family: 'Zen Maru Gothic', sans-serif; font-size: 1rem; font-weight: 700; padding: 10px 20px; border: 3px solid var(--bg-orange); border-radius: 25px; background: var(--white); color: var(--wood-brown); cursor: pointer; transition: all 0.2s; }
+        .ranking-tab:hover { background: #fff5e6; }
+        .ranking-tab.active { background: var(--bg-orange); color: var(--white); }
+        .ranking-list { list-style: none; max-height: 400px; overflow-y: auto; }
+        .ranking-item { display: flex; align-items: center; padding: 12px 18px; border-radius: 15px; margin-bottom: 8px; background: #f8f8f8; transition: transform 0.2s; }
+        .ranking-item:hover { transform: translateX(5px); }
+        .ranking-item.gold { background: linear-gradient(135deg, #ffd700 0%, #ffec8b 100%); }
+        .ranking-item.silver { background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%); }
+        .ranking-item.bronze { background: linear-gradient(135deg, #cd7f32 0%, #daa06d 100%); }
+        .ranking-rank { font-size: 1.3rem; font-weight: 900; width: 45px; text-align: center; }
+        .ranking-name { flex: 1; font-size: 1.1rem; font-weight: 700; margin-left: 12px; }
+        .ranking-score { font-size: 1.2rem; font-weight: 900; color: var(--don-red); }
+        .ranking-empty { text-align: center; padding: 30px; color: #999; font-size: 1.1rem; }
+        @media (max-width: 768px) {
+            .title-main { font-size: 2.2rem; }
+            .note { width: 50px; height: 50px; font-size: 1rem; }
+            .game-area { height: 300px; }
+            .judgment-circle { width: 90px; height: 90px; }
+            .game-header { flex-wrap: wrap; }
+            .info-value { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- タイトル画面 -->
+        <div id="title-screen" class="screen active">
+            <div class="title-logo">
+                <h1 class="title-main">太鼓の達人風<br>リズムゲーム</h1>
+                <p class="title-sub">〜 流れるノーツをさばけ！ 〜</p>
+            </div>
+            <div class="settings-panel">
+                <div class="setting-group">
+                    <label class="setting-label">連符モード</label>
+                    <div class="mode-buttons">
+                        <button class="mode-btn" data-mode="3" onclick="selectMode(3)">3連符</button>
+                        <button class="mode-btn" data-mode="5" onclick="selectMode(5)">5連符</button>
+                        <button class="mode-btn selected" data-mode="7" onclick="selectMode(7)">7連符</button>
+                    </div>
+                </div>
+                <div class="setting-group">
+                    <label class="setting-label">スピード</label>
+                    <div class="speed-control">
+                        <input type="range" class="speed-slider" min="0" max="5" step="1" value="2" id="speed-slider" oninput="updateSpeed()">
+                        <div class="speed-display" id="speed-display">×1.0</div>
+                    </div>
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="startGame()">ゲームスタート！</button>
+            <button class="btn btn-secondary" style="margin-top: 15px;" onclick="showRanking()">ランキング</button>
+            <div class="key-guide">
+                <h3>🥁 操作方法 🥁</h3>
+                <div class="key-row">
+                    <div class="key-item">
+                        <span class="key-pattern don">ドド</span>
+                        <div class="key-buttons"><span class="key-btn">F</span><span class="key-btn">J</span></div>
+                    </div>
+                    <div class="key-item">
+                        <span class="key-pattern">ドカ</span>
+                        <div class="key-buttons"><span class="key-btn">D</span><span class="key-btn">K</span></div>
+                    </div>
+                    <div class="key-item">
+                        <span class="key-pattern">カド</span>
+                        <div class="key-buttons"><span class="key-btn">R</span><span class="key-btn">U</span></div>
+                    </div>
+                    <div class="key-item">
+                        <span class="key-pattern ka">カカ</span>
+                        <div class="key-buttons"><span class="key-btn">E</span><span class="key-btn">I</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ゲーム画面 -->
+        <div id="game-screen" class="screen">
+            <div class="game-header">
+                <div class="info-display">
+                    <div class="info-label">スコア</div>
+                    <div class="info-value score-value" id="score">0</div>
+                </div>
+                <div class="info-display">
+                    <div class="info-label">コンボ</div>
+                    <div class="info-value combo-value" id="combo">0</div>
+                </div>
+                <div class="info-display">
+                    <div class="info-label">残り時間</div>
+                    <div class="info-value timer-value" id="timer">30</div>
+                </div>
+            </div>
+            <div class="game-area">
+                <div class="judgment-circle"></div>
+                <div class="judgment-line"></div>
+                <div class="notes-lane" id="notes-lane"></div>
+                <div class="feedback" id="feedback"></div>
+            </div>
+            <div class="key-guide">
+                <div class="key-row">
+                    <div class="key-item"><span class="key-pattern don">ドド</span><span class="key-btn">F</span><span class="key-btn">J</span></div>
+                    <div class="key-item"><span class="key-pattern">ドカ</span><span class="key-btn">D</span><span class="key-btn">K</span></div>
+                    <div class="key-item"><span class="key-pattern">カド</span><span class="key-btn">R</span><span class="key-btn">U</span></div>
+                    <div class="key-item"><span class="key-pattern ka">カカ</span><span class="key-btn">E</span><span class="key-btn">I</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- リザルト画面 -->
+        <div id="result-screen" class="screen">
+            <div class="result-card">
+                <h2 class="result-title">🎉 結果発表 🎉</h2>
+                <div class="result-mode" id="result-mode">7連符 × 1.0</div>
+                <div class="result-score-label">YOUR SCORE</div>
+                <div class="result-score" id="final-score">0</div>
+                <div class="result-stats">
+                    <div class="stat-item"><div class="stat-value good" id="total-good">0</div><div class="stat-label">良</div></div>
+                    <div class="stat-item"><div class="stat-value ok" id="total-ok">0</div><div class="stat-label">可</div></div>
+                    <div class="stat-item"><div class="stat-value miss" id="total-miss">0</div><div class="stat-label">不可</div></div>
+                </div>
+                <div class="nickname-input-area">
+                    <label for="nickname">ニックネームを入力</label>
+                    <input type="text" id="nickname" class="nickname-input" maxlength="10" placeholder="なまえ">
+                </div>
+                <div class="result-buttons">
+                    <button class="btn btn-primary" onclick="saveScore()">スコアを登録</button>
+                    <button class="btn btn-secondary" onclick="showTitle()">タイトルに戻る</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ランキング画面 -->
+        <div id="ranking-screen" class="screen">
+            <div class="ranking-card">
+                <h2 class="ranking-title">🏆 <span>TOP 10</span> 🏆</h2>
+                <div class="ranking-tabs">
+                    <button class="ranking-tab" data-mode="3" onclick="switchRankingTab(3)">3連符</button>
+                    <button class="ranking-tab" data-mode="5" onclick="switchRankingTab(5)">5連符</button>
+                    <button class="ranking-tab active" data-mode="7" onclick="switchRankingTab(7)">7連符</button>
+                </div>
+                <ul class="ranking-list" id="ranking-list"></ul>
+                <div class="ranking-buttons" style="display: flex; justify-content: center; margin-top: 25px;">
+                    <button class="btn btn-secondary" onclick="showTitle()">タイトルに戻る</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ゲーム設定
+        const SPEEDS = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+        const BPM = 120; // 基準BPM
+        const SIXTEENTH_NOTE_MS = (60000 / BPM) / 4; // 16分音符の間隔（ミリ秒）
+        const JUDGMENT_LINE_POSITION = 20; // 判定ラインの位置（%）
+        const TRAVEL_DISTANCE = 80; // ノーツの移動距離（%）
+        const JUDGMENT_GOOD = 50; // 良判定の範囲（ms）
+        const JUDGMENT_OK = 100; // 可判定の範囲（ms）
+        const SCORE_GOOD = 100;
+        const SCORE_OK = 50;
+
+        // ゲーム状態
+        let gameState = {
+            selectedMode: 7,
+            selectedSpeed: 2,
+            speedMultiplier: 1.0,
+            score: 0,
+            combo: 0,
+            timeLeft: 30,
+            notes: [],
+            nextNoteId: 0,
+            gameStartTime: 0,
+            timerInterval: null,
+            animationFrame: null,
+            isPlaying: false,
+            totalGood: 0,
+            totalOk: 0,
+            totalMiss: 0,
+            currentRankingTab: 7,
+            pendingSecondHits: [] // ペアキーの2つ目の自動判定用
+        };
+
+        // 画面切り替え
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function showTitle() {
+            if (gameState.animationFrame) {
+                cancelAnimationFrame(gameState.animationFrame);
+            }
+            if (gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+            }
+            document.removeEventListener('keydown', handleKeyPress);
+            showScreen('title-screen');
+        }
+
+        function showRanking() {
+            gameState.currentRankingTab = gameState.selectedMode;
+            updateRankingTabs();
+            renderRanking();
+            showScreen('ranking-screen');
+        }
+
+        // モード選択
+        function selectMode(mode) {
+            gameState.selectedMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.remove('selected');
+                if (parseInt(btn.dataset.mode) === mode) btn.classList.add('selected');
+            });
+        }
+
+        // スピード調整
+        function updateSpeed() {
+            const slider = document.getElementById('speed-slider');
+            gameState.selectedSpeed = parseInt(slider.value);
+            gameState.speedMultiplier = SPEEDS[gameState.selectedSpeed];
+            document.getElementById('speed-display').textContent = '×' + gameState.speedMultiplier.toFixed(2);
+        }
+
+        // ゲーム開始
+        function startGame() {
+            // 初期化
+            gameState = {
+                ...gameState,
+                score: 0,
+                combo: 0,
+                timeLeft: 30,
+                notes: [],
+                nextNoteId: 0,
+                gameStartTime: Date.now(),
+                isPlaying: true,
+                totalGood: 0,
+                totalOk: 0,
+                totalMiss: 0,
+                pendingSecondHits: []
+            };
+
+            updateDisplay();
+            document.getElementById('notes-lane').innerHTML = '';
+            
+            // タイマー開始
+            gameState.timerInterval = setInterval(() => {
+                gameState.timeLeft--;
+                updateTimerDisplay();
+                if (gameState.timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+
+            // ノーツ生成開始
+            scheduleNoteGeneration();
+
+            // アニメーションループ開始
+            gameLoop();
+
+            // キーボード入力リスナー
+            document.addEventListener('keydown', handleKeyPress);
+
+            showScreen('game-screen');
+        }
+
+        // ノーツ生成スケジュール
+        function scheduleNoteGeneration() {
+            const currentTime = Date.now() - gameState.gameStartTime;
+            const travelTime = calculateTravelTime();
+            
+            // 最初のノーツ生成
+            generateNotePattern(currentTime + travelTime);
+            
+            // 定期的に新しいパターンを生成（X連符 + 1音符分の間隔）
+            const patternInterval = SIXTEENTH_NOTE_MS * (gameState.selectedMode + 1);
+            
+            let nextPatternTime = currentTime + travelTime + patternInterval;
+            
+            const generateNext = () => {
+                if (!gameState.isPlaying) return;
+                
+                const now = Date.now() - gameState.gameStartTime;
+                if (nextPatternTime - now < travelTime * 2) {
+                    generateNotePattern(nextPatternTime);
+                    nextPatternTime += patternInterval;
+                }
+                
+                if (gameState.timeLeft > 0) {
+                    setTimeout(generateNext, SIXTEENTH_NOTE_MS);
+                }
+            };
+            
+            setTimeout(generateNext, SIXTEENTH_NOTE_MS);
+        }
+
+        // ノーツパターン生成
+        function generateNotePattern(startHitTime) {
+            const noteTypes = ['don', 'ka'];
+            
+            for (let i = 0; i < gameState.selectedMode; i++) {
+                const type = noteTypes[Math.floor(Math.random() * noteTypes.length)];
+                const hitTime = startHitTime + (i * SIXTEENTH_NOTE_MS * 2);
+                
+                const note = {
+                    id: gameState.nextNoteId++,
+                    type: type,
+                    hitTime: hitTime,
+                    spawnTime: Date.now() - gameState.gameStartTime,
+                    x: 100,
+                    status: 'active',
+                    element: null
+                };
+                
+                gameState.notes.push(note);
+                createNoteElement(note);
+            }
+        }
+
+        // ノーツ要素作成
+        function createNoteElement(note) {
+            const noteEl = document.createElement('div');
+            noteEl.className = 'note ' + note.type;
+            noteEl.style.left = note.x + '%';
+            noteEl.dataset.noteId = note.id;
+            
+            document.getElementById('notes-lane').appendChild(noteEl);
+            note.element = noteEl;
+        }
+
+        // 移動時間計算
+        function calculateTravelTime() {
+            // 連符数に応じた適切な移動時間を設定（表示音符数を適切に維持）
+            const baseTime = SIXTEENTH_NOTE_MS * gameState.selectedMode * 12;
+            return baseTime / gameState.speedMultiplier;
+        }
+
+        // ゲームループ
+        function gameLoop() {
+            if (!gameState.isPlaying) return;
+
+            const currentTime = Date.now() - gameState.gameStartTime;
+            const travelTime = calculateTravelTime();
+
+            // ノーツ位置更新
+            gameState.notes = gameState.notes.filter(note => {
+                if (note.status !== 'active') {
+                    if (note.status === 'removing') {
+                        return false;
+                    }
+                    return true;
+                }
+
+                // 経過時間に基づいて位置を計算
+                const elapsed = currentTime - (note.hitTime - travelTime);
+                const progress = elapsed / travelTime;
+                
+                note.x = 100 - (progress * TRAVEL_DISTANCE);
+
+                if (note.element) {
+                    note.element.style.left = note.x + '%';
+                }
+
+                // ミス判定（判定ラインを過ぎてOK判定時間も過ぎた場合）
+                if (currentTime > note.hitTime + JUDGMENT_OK) {
+                    handleMiss(note);
+                    return false;
+                }
+
+                return true;
+            });
+
+            // ペアキーの2つ目の自動判定処理
+            gameState.pendingSecondHits = gameState.pendingSecondHits.filter(pending => {
+                if (currentTime >= pending.triggerTime) {
+                    checkSecondNoteHit(pending.firstNoteType, pending.pressTime);
+                    return false;
+                }
+                return true;
+            });
+
+            gameState.animationFrame = requestAnimationFrame(gameLoop);
+        }
+
+        // キーボード入力処理
+        function handleKeyPress(e) {
+            if (!gameState.isPlaying) return;
+
+            const key = e.key.toLowerCase();
+            const currentTime = Date.now() - gameState.gameStartTime;
+
+            // キーとノーツタイプのマッピング
+            const keyMap = {
+                'f': { type: 'don', isPair: true },
+                'j': { type: 'don', isPair: true },
+                'd': { type: 'don', isPair: true, secondType: 'ka' },
+                'k': { type: 'don', isPair: true, secondType: 'ka' },
+                'r': { type: 'ka', isPair: true, secondType: 'don' },
+                'u': { type: 'ka', isPair: true, secondType: 'don' },
+                'e': { type: 'ka', isPair: true },
+                'i': { type: 'ka', isPair: true }
+            };
+
+            if (!keyMap[key]) return;
+
+            const keyInfo = keyMap[key];
+            
+            // 最も近いノーツを探す（判定ライン付近）
+            let closestNote = null;
+            let minTimeDiff = Infinity;
+
+            for (const note of gameState.notes) {
+                if (note.status !== 'active') continue;
+                if (note.type !== keyInfo.type) continue;
+
+                const timeDiff = Math.abs(currentTime - note.hitTime);
+                if (timeDiff < minTimeDiff && timeDiff <= JUDGMENT_OK) {
+                    minTimeDiff = timeDiff;
+                    closestNote = note;
+                }
+            }
+
+            if (closestNote) {
+                // 判定
+                if (minTimeDiff <= JUDGMENT_GOOD) {
+                    handleHit(closestNote, 'good');
+                } else if (minTimeDiff <= JUDGMENT_OK) {
+                    handleHit(closestNote, 'ok');
+                }
+
+                // ペアキーの場合、2つ目の音符を自動判定予約
+                if (keyInfo.isPair) {
+                    const secondType = keyInfo.secondType || keyInfo.type;
+                    const triggerTime = currentTime + SIXTEENTH_NOTE_MS;
+                    gameState.pendingSecondHits.push({
+                        firstNoteType: closestNote.type,
+                        secondType: secondType,
+                        pressTime: currentTime,
+                        triggerTime: triggerTime
+                    });
+                }
+            }
+        }
+
+        // 2つ目の音符の自動判定
+        function checkSecondNoteHit(firstType, pressTime) {
+            const currentTime = Date.now() - gameState.gameStartTime;
+            const secondType = firstType; // ペアなので同じタイプ（ドド、カカ）または混合
+
+            // 判定時刻付近のノーツを探す
+            let closestNote = null;
+            let minTimeDiff = Infinity;
+
+            for (const note of gameState.notes) {
+                if (note.status !== 'active') continue;
+                
+                const timeDiff = Math.abs(currentTime - note.hitTime);
+                if (timeDiff < minTimeDiff && timeDiff <= JUDGMENT_OK * 1.5) {
+                    minTimeDiff = timeDiff;
+                    closestNote = note;
+                }
+            }
+
+            if (closestNote) {
+                if (minTimeDiff <= JUDGMENT_GOOD) {
+                    handleHit(closestNote, 'good');
+                } else if (minTimeDiff <= JUDGMENT_OK) {
+                    handleHit(closestNote, 'ok');
+                }
+            }
+        }
+
+        // ヒット処理
+        function handleHit(note, judgment) {
+            note.status = 'hit';
+            
+            if (judgment === 'good') {
+                gameState.score += Math.floor(SCORE_GOOD * gameState.speedMultiplier);
+                gameState.combo++;
+                gameState.totalGood++;
+                showFeedback('良！', 'good');
+                if (note.element) note.element.classList.add('hit-good');
+            } else if (judgment === 'ok') {
+                gameState.score += Math.floor(SCORE_OK * gameState.speedMultiplier);
+                gameState.combo++;
+                gameState.totalOk++;
+                showFeedback('可', 'ok');
+                if (note.element) note.element.classList.add('hit-ok');
+            }
+
+            updateDisplay();
+
+            setTimeout(() => {
+                if (note.element && note.element.parentNode) {
+                    note.element.parentNode.removeChild(note.element);
+                }
+                note.status = 'removing';
+            }, 300);
+        }
+
+        // ミス処理
+        function handleMiss(note) {
+            note.status = 'miss';
+            gameState.combo = 0;
+            gameState.totalMiss++;
+            
+            if (note.element) {
+                note.element.classList.add('hit-miss');
+                setTimeout(() => {
+                    if (note.element && note.element.parentNode) {
+                        note.element.parentNode.removeChild(note.element);
+                    }
+                }, 300);
+            }
+            
+            updateDisplay();
+        }
+
+        // フィードバック表示
+        function showFeedback(text, type) {
+            const feedback = document.getElementById('feedback');
+            feedback.textContent = text;
+            feedback.className = 'feedback ' + type + ' show';
+            setTimeout(() => feedback.classList.remove('show'), 600);
+        }
+
+        // 表示更新
+        function updateDisplay() {
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('combo').textContent = gameState.combo;
+        }
+
+        function updateTimerDisplay() {
+            const timerEl = document.getElementById('timer');
+            timerEl.textContent = gameState.timeLeft;
+            if (gameState.timeLeft <= 10) {
+                timerEl.classList.add('warning');
+            } else {
+                timerEl.classList.remove('warning');
+            }
+        }
+
+        // ゲーム終了
+        function endGame() {
+            gameState.isPlaying = false;
+            clearInterval(gameState.timerInterval);
+            if (gameState.animationFrame) {
+                cancelAnimationFrame(gameState.animationFrame);
+            }
+            document.removeEventListener('keydown', handleKeyPress);
+
+            // リザルト表示
+            const speedText = '×' + gameState.speedMultiplier.toFixed(2);
+            document.getElementById('result-mode').textContent = gameState.selectedMode + '連符 ' + speedText;
+            document.getElementById('final-score').textContent = gameState.score;
+            document.getElementById('total-good').textContent = gameState.totalGood;
+            document.getElementById('total-ok').textContent = gameState.totalOk;
+            document.getElementById('total-miss').textContent = gameState.totalMiss;
+            document.getElementById('nickname').value = '';
+
+            showScreen('result-screen');
+        }
+
+        // スコア保存
+        function saveScore() {
+            const nickname = document.getElementById('nickname').value.trim() || '名無し';
+            const scoreData = {
+                name: nickname,
+                score: gameState.score,
+                speed: gameState.speedMultiplier,
+                date: new Date().toISOString()
+            };
+
+            const storageKey = 'taikoRanking_' + gameState.selectedMode;
+            let ranking = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            ranking.push(scoreData);
+            ranking.sort((a, b) => b.score - a.score);
+            ranking = ranking.slice(0, 10);
+            localStorage.setItem(storageKey, JSON.stringify(ranking));
+
+            gameState.currentRankingTab = gameState.selectedMode;
+            showRanking();
+        }
+
+        // ランキング表示
+        function switchRankingTab(mode) {
+            gameState.currentRankingTab = mode;
+            updateRankingTabs();
+            renderRanking();
+        }
+
+        function updateRankingTabs() {
+            document.querySelectorAll('.ranking-tab').forEach(tab => {
+                tab.classList.remove('active');
+                if (parseInt(tab.dataset.mode) === gameState.currentRankingTab) {
+                    tab.classList.add('active');
+                }
+            });
+        }
+
+        function renderRanking() {
+            const storageKey = 'taikoRanking_' + gameState.currentRankingTab;
+            const ranking = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            const list = document.getElementById('ranking-list');
+
+            if (ranking.length === 0) {
+                list.innerHTML = '<li class="ranking-empty">まだ記録がありません<br>' + 
+                    gameState.currentRankingTab + '連符モードをプレイしてスコアを登録しよう！</li>';
+                return;
+            }
+
+            list.innerHTML = ranking.map((entry, index) => {
+                let rankClass = '';
+                if (index === 0) rankClass = 'gold';
+                else if (index === 1) rankClass = 'silver';
+                else if (index === 2) rankClass = 'bronze';
+                
+                const rankEmoji = index === 0 ? '👑' : index === 1 ? '🥈' : index === 2 ? '🥉' : (index + 1);
+                const speedText = ' (×' + entry.speed.toFixed(2) + ')';
+                
+                return '<li class="ranking-item ' + rankClass + '">' +
+                    '<span class="ranking-rank">' + rankEmoji + '</span>' +
+                    '<span class="ranking-name">' + escapeHtml(entry.name) + speedText + '</span>' +
+                    '<span class="ranking-score">' + entry.score + '点</span></li>';
+            }).join('');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', () => {
+            showTitle();
+            updateSpeed();
+        });
+    </script>
+</body>
+</html>
