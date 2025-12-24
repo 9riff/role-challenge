@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ロール処理認識チャレンジ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --don-red: #e63946; --don-red-dark: #c1121f;
+            --ka-blue: #4895ef; --ka-blue-dark: #3a86ff;
+            --gold: #ffd60a; --gold-dark: #ffc300;
+            --bg-orange: #ff9f1c; --bg-orange-light: #ffbf69;
+            --wood-brown: #8b4513; --wood-light: #d2691e;
+            --success-green: #2ec4b6; --miss-pink: #ff006e;
+            --white: #ffffff; --black: #1a1a2e;
+        }
+        body {
+            font-family: 'Zen Maru Gothic', sans-serif;
+            background: linear-gradient(135deg, var(--bg-orange) 0%, var(--bg-orange-light) 50%, var(--gold) 100%);
+            min-height: 100vh; overflow-x: hidden; position: relative;
+        }
+        body::before {
+            content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background-image: radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(255,255,255,0.05) 20px, rgba(255,255,255,0.05) 40px);
+            pointer-events: none; z-index: 0;
+        }
+        .container {
+            position: relative; z-index: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; min-height: 100vh; padding: 20px;
+        }
+        .screen { display: none; width: 100%; max-width: 900px; animation: fadeIn 0.5s ease-out; }
+        .screen.active { display: flex; flex-direction: column; align-items: center; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .title-logo { text-align: center; margin-bottom: 30px; }
+        .title-main {
+            font-size: 3.5rem; font-weight: 900; color: var(--white);
+            text-shadow: 4px 4px 0 var(--don-red), 8px 8px 0 var(--don-red-dark), 12px 12px 20px rgba(0,0,0,0.3);
+            letter-spacing: 0.1em; animation: titleBounce 2s ease-in-out infinite;
+        }
+        @keyframes titleBounce { 0%, 100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-10px) rotate(1deg); } }
+        .title-sub { font-size: 1.3rem; color: var(--wood-brown); margin-top: 10px; font-weight: 700; }
+        .taiko-illustration { display: flex; justify-content: center; gap: 30px; margin: 20px 0; }
+        .taiko-drum {
+            width: 100px; height: 100px;
+            background: radial-gradient(circle at 30% 30%, var(--wood-light), var(--wood-brown));
+            border-radius: 50%; position: relative;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.3), 0 10px 30px rgba(0,0,0,0.3);
+            animation: drumPulse 1s ease-in-out infinite;
+        }
+        .taiko-drum::before {
+            content: ''; position: absolute; top: 15%; left: 15%; width: 70%; height: 70%;
+            background: radial-gradient(circle at 40% 40%, #f5f5dc, #e8e4c9);
+            border-radius: 50%; box-shadow: inset 0 0 20px rgba(139,69,19,0.3);
+        }
+        .taiko-drum.don::after {
+            content: 'ドン'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 1.3rem; font-weight: 900; color: var(--don-red); text-shadow: 2px 2px 0 var(--white);
+        }
+        .taiko-drum.ka::after {
+            content: 'カッ'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 1.3rem; font-weight: 900; color: var(--ka-blue); text-shadow: 2px 2px 0 var(--white);
+        }
+        @keyframes drumPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        .taiko-drum:nth-child(2) { animation-delay: 0.5s; }
+        .mode-selection { margin: 25px 0; text-align: center; }
+        .mode-selection h3 { color: var(--wood-brown); font-size: 1.3rem; margin-bottom: 15px; }
+        .mode-buttons { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+        .mode-btn {
+            font-family: 'Zen Maru Gothic', sans-serif; font-size: 1.2rem; font-weight: 900;
+            padding: 15px 30px; border: 4px solid transparent; border-radius: 20px; cursor: pointer;
+            transition: all 0.2s ease; background: var(--white); color: var(--wood-brown);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .mode-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
+        .mode-btn.selected {
+            border-color: var(--don-red); background: linear-gradient(180deg, #fff5f5 0%, #ffe0e0 100%);
+            color: var(--don-red); transform: scale(1.05);
+        }
+        .mode-btn .mode-notes { font-size: 0.8rem; opacity: 0.7; margin-top: 5px; }
+        .btn {
+            font-family: 'Zen Maru Gothic', sans-serif; font-size: 1.8rem; font-weight: 900;
+            padding: 20px 60px; border: none; border-radius: 50px; cursor: pointer;
+            transition: all 0.2s ease; position: relative; overflow: hidden;
+        }
+        .btn-primary {
+            background: linear-gradient(180deg, var(--don-red) 0%, var(--don-red-dark) 100%);
+            color: var(--white); box-shadow: 0 6px 0 #8b0000, 0 10px 20px rgba(0,0,0,0.3);
+        }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 9px 0 #8b0000, 0 15px 30px rgba(0,0,0,0.3); }
+        .btn-primary:active { transform: translateY(3px); box-shadow: 0 3px 0 #8b0000, 0 5px 10px rgba(0,0,0,0.3); }
+        .btn-secondary {
+            background: linear-gradient(180deg, var(--ka-blue) 0%, var(--ka-blue-dark) 100%);
+            color: var(--white); box-shadow: 0 6px 0 #1a5fb4, 0 10px 20px rgba(0,0,0,0.3);
+            font-size: 1.3rem; padding: 15px 40px;
+        }
+        .btn-secondary:hover { transform: translateY(-3px); box-shadow: 0 9px 0 #1a5fb4, 0 15px 30px rgba(0,0,0,0.3); }
+        .btn-secondary:active { transform: translateY(3px); box-shadow: 0 3px 0 #1a5fb4, 0 5px 10px rgba(0,0,0,0.3); }
+        .key-guide {
+            background: rgba(255,255,255,0.95); border-radius: 20px; padding: 20px 30px;
+            margin-top: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .key-guide h3 { text-align: center; color: var(--wood-brown); margin-bottom: 15px; font-size: 1.2rem; }
+        .key-row { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
+        .key-item { display: flex; align-items: center; gap: 8px; background: #f8f8f8; padding: 8px 12px; border-radius: 10px; }
+        .key-pattern { font-weight: 900; font-size: 1rem; }
+        .key-pattern.don { color: var(--don-red); }
+        .key-pattern.ka { color: var(--ka-blue); }
+        .key-pattern.mixed { background: linear-gradient(90deg, var(--don-red) 50%, var(--ka-blue) 50%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .key-pattern.mixed-reverse { background: linear-gradient(90deg, var(--ka-blue) 50%, var(--don-red) 50%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .key-buttons { display: flex; gap: 5px; }
+        .key-btn { background: var(--black); color: var(--white); padding: 5px 10px; border-radius: 5px; font-weight: 700; font-size: 0.85rem; }
+        .game-header { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .score-display, .timer-display {
+            background: rgba(255,255,255,0.95); padding: 12px 25px; border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+        .score-label, .timer-label { font-size: 0.85rem; color: var(--wood-brown); font-weight: 700; }
+        .score-value { font-size: 2.2rem; font-weight: 900; color: var(--don-red); }
+        .timer-value { font-size: 2.2rem; font-weight: 900; color: var(--ka-blue); }
+        .timer-value.warning { color: var(--miss-pink); animation: timerPulse 0.5s ease-in-out infinite; }
+        @keyframes timerPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        .mode-display {
+            background: rgba(255,255,255,0.95); padding: 12px 25px; border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2); text-align: center;
+        }
+        .mode-label { font-size: 0.85rem; color: var(--wood-brown); font-weight: 700; }
+        .mode-value { font-size: 1.5rem; font-weight: 900; color: var(--gold-dark); }
+        .notes-area {
+            background: linear-gradient(180deg, #2a2a4a 0%, #1a1a2e 100%);
+            border-radius: 25px; padding: 35px 30px; width: 100%;
+            box-shadow: inset 0 5px 20px rgba(0,0,0,0.5), 0 10px 40px rgba(0,0,0,0.3);
+            position: relative; overflow: hidden;
+        }
+        .notes-area::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px;
+            background: linear-gradient(90deg, var(--don-red), var(--gold), var(--ka-blue));
+        }
+        .combo-display { position: absolute; top: 15px; right: 20px; font-size: 1rem; color: var(--gold); font-weight: 700; }
+        .combo-count { font-size: 1.5rem; }
+        .notes-container { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; padding: 10px 0; }
+        .note {
+            width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; font-size: 1.2rem; font-weight: 900; color: var(--white);
+            position: relative; transition: all 0.15s ease;
+        }
+        .note.don { background: radial-gradient(circle at 30% 30%, #ff6b6b, var(--don-red)); box-shadow: 0 4px 0 var(--don-red-dark), 0 6px 15px rgba(230,57,70,0.5); }
+        .note.ka { background: radial-gradient(circle at 30% 30%, #74c0fc, var(--ka-blue)); box-shadow: 0 4px 0 var(--ka-blue-dark), 0 6px 15px rgba(72,149,239,0.5); }
+        .note.current { transform: scale(1.25); animation: currentPulse 0.4s ease-in-out infinite; z-index: 10; }
+        @keyframes currentPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,214,10,0.7), 0 4px 0 var(--don-red-dark); } 50% { box-shadow: 0 0 0 12px rgba(255,214,10,0), 0 4px 0 var(--don-red-dark); } }
+        .note.current::after { content: '▼'; position: absolute; top: -25px; font-size: 1rem; color: var(--gold); animation: arrowBounce 0.5s ease-in-out infinite; }
+        @keyframes arrowBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(5px); } }
+        .note.success { background: var(--success-green) !important; box-shadow: 0 4px 0 #1a9988, 0 6px 15px rgba(46,196,182,0.5) !important; transform: scale(0.9); }
+        .note.miss { background: var(--miss-pink) !important; box-shadow: 0 4px 0 #c9004e, 0 6px 15px rgba(255,0,110,0.5) !important; animation: missShake 0.3s ease-in-out; }
+        @keyframes missShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        .current-pattern { text-align: center; margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.15); border-radius: 15px; }
+        .current-pattern-label { font-size: 0.9rem; color: rgba(255,255,255,0.7); margin-bottom: 8px; }
+        .current-pattern-value { font-size: 2.5rem; font-weight: 900; color: var(--gold); letter-spacing: 0.15em; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        .feedback { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 3rem; font-weight: 900; pointer-events: none; opacity: 0; z-index: 100; }
+        .feedback.show { animation: feedbackPop 0.6s ease-out forwards; }
+        .feedback.success { color: var(--success-green); text-shadow: 3px 3px 0 var(--white); }
+        .feedback.miss { color: var(--miss-pink); text-shadow: 3px 3px 0 var(--white); }
+        .feedback.complete { color: var(--gold); text-shadow: 3px 3px 0 var(--don-red); font-size: 4rem; }
+        @keyframes feedbackPop { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); } 20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); } 100% { opacity: 0; transform: translate(-50%, -70%) scale(1); } }
+        .game-key-guide { margin-top: 20px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+        .game-key-item { background: rgba(255,255,255,0.9); padding: 8px 12px; border-radius: 10px; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 700; }
+        .result-card { background: rgba(255,255,255,0.98); border-radius: 30px; padding: 40px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 500px; width: 100%; }
+        .result-title { font-size: 2.2rem; font-weight: 900; color: var(--wood-brown); margin-bottom: 10px; }
+        .result-mode { font-size: 1.1rem; color: var(--ka-blue); font-weight: 700; margin-bottom: 15px; }
+        .result-score-label { font-size: 1.1rem; color: #666; margin-top: 15px; }
+        .result-score { font-size: 4.5rem; font-weight: 900; color: var(--don-red); text-shadow: 4px 4px 0 #ffd6d9; line-height: 1; }
+        .result-stats { display: flex; justify-content: center; gap: 25px; margin: 25px 0; }
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 1.8rem; font-weight: 900; }
+        .stat-value.hits { color: var(--success-green); }
+        .stat-value.misses { color: var(--miss-pink); }
+        .stat-value.completed { color: var(--ka-blue); }
+        .stat-label { font-size: 0.85rem; color: #666; }
+        .nickname-input-area { margin: 25px 0; }
+        .nickname-input-area label { display: block; font-size: 1rem; font-weight: 700; color: var(--wood-brown); margin-bottom: 10px; }
+        .nickname-input { font-family: 'Zen Maru Gothic', sans-serif; font-size: 1.3rem; padding: 12px 20px; border: 4px solid var(--bg-orange); border-radius: 15px; width: 100%; max-width: 280px; text-align: center; outline: none; transition: border-color 0.3s; }
+        .nickname-input:focus { border-color: var(--don-red); }
+        .result-buttons { display: flex; flex-direction: column; gap: 12px; align-items: center; }
+        .ranking-card { background: rgba(255,255,255,0.98); border-radius: 30px; padding: 35px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 600px; width: 100%; }
+        .ranking-title { text-align: center; font-size: 2.2rem; font-weight: 900; color: var(--wood-brown); margin-bottom: 20px; }
+        .ranking-title span { color: var(--gold); text-shadow: 2px 2px 0 var(--bg-orange); }
+        .ranking-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .ranking-tab { font-family: 'Zen Maru Gothic', sans-serif; font-size: 1rem; font-weight: 700; padding: 10px 20px; border: 3px solid var(--bg-orange); border-radius: 25px; background: var(--white); color: var(--wood-brown); cursor: pointer; transition: all 0.2s; }
+        .ranking-tab:hover { background: #fff5e6; }
+        .ranking-tab.active { background: var(--bg-orange); color: var(--white); }
+        .ranking-list { list-style: none; max-height: 400px; overflow-y: auto; }
+        .ranking-item { display: flex; align-items: center; padding: 12px 18px; border-radius: 15px; margin-bottom: 8px; background: #f8f8f8; transition: transform 0.2s; }
+        .ranking-item:hover { transform: translateX(5px); }
+        .ranking-item.gold { background: linear-gradient(135deg, #ffd700 0%, #ffec8b 100%); }
+        .ranking-item.silver { background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%); }
+        .ranking-item.bronze { background: linear-gradient(135deg, #cd7f32 0%, #daa06d 100%); }
+        .ranking-item.gold, .ranking-item.silver, .ranking-item.bronze { color: var(--black); }
+        .ranking-rank { font-size: 1.3rem; font-weight: 900; width: 45px; text-align: center; }
+        .ranking-name { flex: 1; font-size: 1.1rem; font-weight: 700; margin-left: 12px; }
+        .ranking-score { font-size: 1.2rem; font-weight: 900; color: var(--don-red); }
+        .ranking-item.gold .ranking-score, .ranking-item.silver .ranking-score, .ranking-item.bronze .ranking-score { color: var(--black); }
+        .ranking-empty { text-align: center; padding: 30px; color: #999; font-size: 1.1rem; }
+        .ranking-buttons { display: flex; justify-content: center; margin-top: 25px; }
+        @media (max-width: 768px) {
+            .title-main { font-size: 2.2rem; }
+            .taiko-drum { width: 70px; height: 70px; }
+            .taiko-drum::after { font-size: 1rem !important; }
+            .note { width: 50px; height: 50px; font-size: 1rem; }
+            .notes-area { padding: 25px 15px; }
+            .game-header { flex-direction: column; gap: 10px; }
+            .result-score { font-size: 3rem; }
+            .mode-buttons { flex-direction: column; align-items: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="title-screen" class="screen active">
+            <div class="title-logo">
+                <h1 class="title-main">ロール処理<br>認識チャレンジ</h1>
+                <p class="title-sub">〜 連符マスターへの道 〜</p>
+            </div>
+            <div class="taiko-illustration">
+                <div class="taiko-drum don"></div>
+                <div class="taiko-drum ka"></div>
+            </div>
+            <div class="mode-selection">
+                <h3>🎵 モード選択 🎵</h3>
+                <div class="mode-buttons">
+                    <button class="mode-btn" data-mode="3" onclick="selectMode(3)">
+                        <div>3連符</div>
+                        <div class="mode-notes">1ペア + 1単音</div>
+                    </button>
+                    <button class="mode-btn" data-mode="5" onclick="selectMode(5)">
+                        <div>5連符</div>
+                        <div class="mode-notes">2ペア + 1単音</div>
+                    </button>
+                    <button class="mode-btn selected" data-mode="7" onclick="selectMode(7)">
+                        <div>7連符</div>
+                        <div class="mode-notes">3ペア + 1単音</div>
+                    </button>
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="startGame()">ゲームスタート！</button>
+            <button class="btn btn-secondary" style="margin-top: 15px;" onclick="showRanking()">ランキング</button>
+            <div class="key-guide">
+                <h3>🥁 操作方法 🥁</h3>
+                <div class="key-row">
+                    <div class="key-item">
+                        <span class="key-pattern don">ドド / ド</span>
+                        <div class="key-buttons"><span class="key-btn">F</span><span class="key-btn">J</span></div>
+                    </div>
+                    <div class="key-item">
+                        <span class="key-pattern mixed">ドカ</span>
+                        <div class="key-buttons"><span class="key-btn">D</span><span class="key-btn">K</span></div>
+                    </div>
+                    <div class="key-item">
+                        <span class="key-pattern mixed-reverse">カド</span>
+                        <div class="key-buttons"><span class="key-btn">R</span><span class="key-btn">U</span></div>
+                    </div>
+                    <div class="key-item">
+                        <span class="key-pattern ka">カカ / カ</span>
+                        <div class="key-buttons"><span class="key-btn">E</span><span class="key-btn">I</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="game-screen" class="screen">
+            <div class="game-header">
+                <div class="score-display">
+                    <div class="score-label">スコア</div>
+                    <div class="score-value" id="score">0</div>
+                </div>
+                <div class="mode-display">
+                    <div class="mode-label">モード</div>
+                    <div class="mode-value" id="current-mode">7連符</div>
+                </div>
+                <div class="timer-display">
+                    <div class="timer-label">残り時間</div>
+                    <div class="timer-value" id="timer">30</div>
+                </div>
+            </div>
+            <div class="notes-area">
+                <div class="combo-display">COMBO: <span class="combo-count" id="combo">0</span></div>
+                <div class="current-pattern">
+                    <div class="current-pattern-label">次の問題</div>
+                    <div class="current-pattern-value" id="current-pattern">--</div>
+                </div>
+                <div class="notes-container" id="notes-container"></div>
+            </div>
+            <div class="game-key-guide">
+                <div class="game-key-item"><span class="key-pattern don">ドド/ド</span><span class="key-btn">F</span><span class="key-btn">J</span></div>
+                <div class="game-key-item"><span class="key-pattern mixed">ドカ</span><span class="key-btn">D</span><span class="key-btn">K</span></div>
+                <div class="game-key-item"><span class="key-pattern mixed-reverse">カド</span><span class="key-btn">R</span><span class="key-btn">U</span></div>
+                <div class="game-key-item"><span class="key-pattern ka">カカ/カ</span><span class="key-btn">E</span><span class="key-btn">I</span></div>
+            </div>
+        </div>
+        <div id="result-screen" class="screen">
+            <div class="result-card">
+                <h2 class="result-title">🎉 結果発表 🎉</h2>
+                <div class="result-mode" id="result-mode">7連符モード</div>
+                <div class="result-score-label">YOUR SCORE</div>
+                <div class="result-score" id="final-score">0</div>
+                <div class="result-stats">
+                    <div class="stat-item"><div class="stat-value hits" id="total-hits">0</div><div class="stat-label">正解数</div></div>
+                    <div class="stat-item"><div class="stat-value misses" id="total-misses">0</div><div class="stat-label">ミス数</div></div>
+                    <div class="stat-item"><div class="stat-value completed" id="total-completed">0</div><div class="stat-label">完走数</div></div>
+                </div>
+                <div class="nickname-input-area">
+                    <label for="nickname">ニックネームを入力</label>
+                    <input type="text" id="nickname" class="nickname-input" maxlength="10" placeholder="なまえ">
+                </div>
+                <div class="result-buttons">
+                    <button class="btn btn-primary" onclick="saveScore()">スコアを登録</button>
+                    <button class="btn btn-secondary" onclick="showTitle()">タイトルに戻る</button>
+                </div>
+            </div>
+        </div>
+        <div id="ranking-screen" class="screen">
+            <div class="ranking-card">
+                <h2 class="ranking-title">🏆 <span>TOP 10</span> 🏆</h2>
+                <div class="ranking-tabs">
+                    <button class="ranking-tab" data-mode="3" onclick="switchRankingTab(3)">3連符</button>
+                    <button class="ranking-tab" data-mode="5" onclick="switchRankingTab(5)">5連符</button>
+                    <button class="ranking-tab active" data-mode="7" onclick="switchRankingTab(7)">7連符</button>
+                </div>
+                <ul class="ranking-list" id="ranking-list"></ul>
+                <div class="ranking-buttons">
+                    <button class="btn btn-secondary" onclick="showTitle()">タイトルに戻る</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="feedback" id="feedback"></div>
+    <script>
+        let gameState = {
+            score: 0, timeLeft: 30, currentNotes: [], currentNoteIndex: 0,
+            currentInputPattern: '', combo: 0, totalHits: 0, totalMisses: 0,
+            completedPatterns: 0, timerInterval: null, isPlaying: false,
+            selectedMode: 7, currentRankingTab: 7
+        };
+        const PATTERNS = {
+            'ドド': ['f', 'j'],
+            'ドカ': ['d', 'k'],
+            'カド': ['r', 'u'],
+            'カカ': ['e', 'i']
+        };
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+        function showTitle() { showScreen('title-screen'); }
+        function showRanking() {
+            gameState.currentRankingTab = gameState.selectedMode;
+            updateRankingTabs(); renderRanking(); showScreen('ranking-screen');
+        }
+        function selectMode(mode) {
+            gameState.selectedMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.remove('selected');
+                if (parseInt(btn.dataset.mode) === mode) btn.classList.add('selected');
+            });
+        }
+        function startGame() {
+            gameState = { ...gameState, score: 0, timeLeft: 30, currentNotes: [], currentNoteIndex: 0,
+                currentInputPattern: '', combo: 0, totalHits: 0, totalMisses: 0,
+                completedPatterns: 0, timerInterval: null, isPlaying: true };
+            document.getElementById('current-mode').textContent = gameState.selectedMode + '連符';
+            updateDisplay(); generateNewPattern(); showScreen('game-screen');
+            gameState.timerInterval = setInterval(() => {
+                gameState.timeLeft--; updateTimerDisplay();
+                if (gameState.timeLeft <= 0) endGame();
+            }, 1000);
+            document.addEventListener('keydown', handleKeyPress);
+        }
+        function generateNewPattern() {
+            const mode = gameState.selectedMode;
+            const pairCount = (mode - 1) / 2;
+            const pairPatterns = ['ドド', 'ドカ', 'カド', 'カカ'];
+            const singleNotes = ['ド', 'カ'];
+            gameState.currentNotes = []; gameState.currentNoteIndex = 0;
+            for (let i = 0; i < pairCount; i++) {
+                const pattern = pairPatterns[Math.floor(Math.random() * pairPatterns.length)];
+                gameState.currentNotes.push({ note: pattern[0], pairPattern: pattern, pairIndex: i, isFirstOfPair: true, status: 'pending' });
+                gameState.currentNotes.push({ note: pattern[1], pairPattern: pattern, pairIndex: i, isFirstOfPair: false, status: 'pending' });
+            }
+            const singleNote = singleNotes[Math.floor(Math.random() * singleNotes.length)];
+            const singlePattern = singleNote === 'ド' ? 'ドド' : 'カカ';
+            gameState.currentNotes.push({ note: singleNote, pairPattern: singlePattern, pairIndex: pairCount, isFirstOfPair: true, isSingle: true, status: 'pending' });
+            updateCurrentInputPattern(); renderNotes();
+        }
+        function updateCurrentInputPattern() {
+            const currentNote = gameState.currentNotes[gameState.currentNoteIndex];
+            if (currentNote) {
+                gameState.currentInputPattern = currentNote.pairPattern;
+                
+                // 次のペアのパターンを探す
+                const currentPairIndex = currentNote.pairIndex;
+                const nextPairNote = gameState.currentNotes.find(note => 
+                    note.pairIndex > currentPairIndex && note.isFirstOfPair && note.status === 'pending'
+                );
+                
+                if (nextPairNote) {
+                    document.getElementById('current-pattern').textContent = nextPairNote.pairPattern;
+                } else {
+                    document.getElementById('current-pattern').textContent = '--';
+                }
+            }
+        }
+        function renderNotes() {
+            const container = document.getElementById('notes-container');
+            container.innerHTML = '';
+            gameState.currentNotes.forEach((noteData, index) => {
+                const noteDiv = document.createElement('div');
+                noteDiv.className = 'note ' + (noteData.note === 'ド' ? 'don' : 'ka');
+                if (noteData.status === 'success') noteDiv.classList.add('success');
+                else if (noteData.status === 'miss') noteDiv.classList.add('miss');
+                else if (index === gameState.currentNoteIndex) noteDiv.classList.add('current');
+                container.appendChild(noteDiv);
+            });
+        }
+        function handleKeyPress(e) {
+            if (!gameState.isPlaying) return;
+            const key = e.key.toLowerCase();
+            const validKeys = ['f', 'j', 'd', 'k', 'e', 'i', 'r', 'u'];
+            if (!validKeys.includes(key)) return;
+            const currentNote = gameState.currentNotes[gameState.currentNoteIndex];
+            if (!currentNote || currentNote.status !== 'pending') return;
+            let pressedPattern = null;
+            for (const [pattern, keys] of Object.entries(PATTERNS)) {
+                if (keys.includes(key)) { pressedPattern = pattern; break; }
+            }
+            if (pressedPattern === currentNote.pairPattern) {
+                if (currentNote.isSingle) {
+                    currentNote.status = 'success';
+                    gameState.score += 100; gameState.totalHits++; gameState.combo++;
+                    showFeedback('良！', 'success'); gameState.currentNoteIndex++;
+                } else if (currentNote.isFirstOfPair) {
+                    currentNote.status = 'success';
+                    const nextNote = gameState.currentNotes[gameState.currentNoteIndex + 1];
+                    if (nextNote) nextNote.status = 'success';
+                    gameState.score += 100; gameState.totalHits++; gameState.combo++;
+                    showFeedback('良！', 'success'); gameState.currentNoteIndex += 2;
+                } else {
+                    currentNote.status = 'success';
+                    gameState.score += 100; gameState.totalHits++; gameState.combo++;
+                    showFeedback('良！', 'success'); gameState.currentNoteIndex++;
+                }
+            } else {
+                if (currentNote.isSingle) {
+                    currentNote.status = 'miss'; gameState.currentNoteIndex++;
+                } else if (currentNote.isFirstOfPair) {
+                    currentNote.status = 'miss';
+                    const nextNote = gameState.currentNotes[gameState.currentNoteIndex + 1];
+                    if (nextNote) nextNote.status = 'miss';
+                    gameState.currentNoteIndex += 2;
+                } else {
+                    currentNote.status = 'miss'; gameState.currentNoteIndex++;
+                }
+                gameState.score = Math.max(0, gameState.score - 50);
+                gameState.totalMisses++; gameState.combo = 0;
+                showFeedback('不可', 'miss');
+            }
+            updateCurrentInputPattern(); renderNotes(); updateDisplay();
+            if (gameState.currentNoteIndex >= gameState.currentNotes.length) {
+                const allSuccess = gameState.currentNotes.every(n => n.status === 'success');
+                if (allSuccess) {
+                    gameState.score += 500; gameState.completedPatterns++;
+                    showFeedback('完走！+500', 'complete');
+                }
+                setTimeout(() => { if (gameState.isPlaying) { generateNewPattern(); updateDisplay(); } }, 300);
+            }
+        }
+        function showFeedback(text, type) {
+            const feedback = document.getElementById('feedback');
+            feedback.textContent = text;
+            feedback.className = 'feedback ' + type + ' show';
+            setTimeout(() => feedback.classList.remove('show'), 600);
+        }
+        function updateDisplay() {
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('combo').textContent = gameState.combo;
+        }
+        function updateTimerDisplay() {
+            const timerEl = document.getElementById('timer');
+            timerEl.textContent = gameState.timeLeft;
+            if (gameState.timeLeft <= 10) timerEl.classList.add('warning');
+            else timerEl.classList.remove('warning');
+        }
+        function endGame() {
+            gameState.isPlaying = false;
+            clearInterval(gameState.timerInterval);
+            document.removeEventListener('keydown', handleKeyPress);
+            document.getElementById('result-mode').textContent = gameState.selectedMode + '連符モード';
+            document.getElementById('final-score').textContent = gameState.score;
+            document.getElementById('total-hits').textContent = gameState.totalHits;
+            document.getElementById('total-misses').textContent = gameState.totalMisses;
+            document.getElementById('total-completed').textContent = gameState.completedPatterns;
+            document.getElementById('nickname').value = '';
+            showScreen('result-screen');
+        }
+        function saveScore() {
+            const nickname = document.getElementById('nickname').value.trim() || '名無し';
+            const scoreData = { name: nickname, score: gameState.score, date: new Date().toISOString() };
+            const storageKey = 'rollChallengeRanking_' + gameState.selectedMode;
+            let ranking = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            ranking.push(scoreData);
+            ranking.sort((a, b) => b.score - a.score);
+            ranking = ranking.slice(0, 10);
+            localStorage.setItem(storageKey, JSON.stringify(ranking));
+            gameState.currentRankingTab = gameState.selectedMode;
+            showRanking();
+        }
+        function switchRankingTab(mode) {
+            gameState.currentRankingTab = mode;
+            updateRankingTabs(); renderRanking();
+        }
+        function updateRankingTabs() {
+            document.querySelectorAll('.ranking-tab').forEach(tab => {
+                tab.classList.remove('active');
+                if (parseInt(tab.dataset.mode) === gameState.currentRankingTab) tab.classList.add('active');
+            });
+        }
+        function renderRanking() {
+            const storageKey = 'rollChallengeRanking_' + gameState.currentRankingTab;
+            const ranking = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            const list = document.getElementById('ranking-list');
+            if (ranking.length === 0) {
+                list.innerHTML = '<li class="ranking-empty">まだ記録がありません<br>' + gameState.currentRankingTab + '連符モードをプレイしてスコアを登録しよう！</li>';
+                return;
+            }
+            list.innerHTML = ranking.map((entry, index) => {
+                let rankClass = '';
+                if (index === 0) rankClass = 'gold';
+                else if (index === 1) rankClass = 'silver';
+                else if (index === 2) rankClass = 'bronze';
+                const rankEmoji = index === 0 ? '👑' : index === 1 ? '🥈' : index === 2 ? '🥉' : (index + 1);
+                return '<li class="ranking-item ' + rankClass + '">' +
+                    '<span class="ranking-rank">' + rankEmoji + '</span>' +
+                    '<span class="ranking-name">' + escapeHtml(entry.name) + '</span>' +
+                    '<span class="ranking-score">' + entry.score + '点</span></li>';
+            }).join('');
+        }
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        document.addEventListener('DOMContentLoaded', () => showTitle());
+    </script>
+</body>
+</html>
