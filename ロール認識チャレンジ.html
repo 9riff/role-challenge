@@ -158,7 +158,13 @@
         @keyframes missShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
         .current-pattern { text-align: center; margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.15); border-radius: 15px; }
         .current-pattern-label { font-size: 0.9rem; color: rgba(255,255,255,0.7); margin-bottom: 8px; }
-        .current-pattern-value { font-size: 2.5rem; font-weight: 900; color: var(--gold); letter-spacing: 0.15em; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        .current-pattern-value { display: flex; justify-content: center; gap: 8px; min-height: 40px; align-items: center; }
+        .preview-note {
+            width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; position: relative; transition: all 0.15s ease;
+        }
+        .preview-note.don { background: radial-gradient(circle at 30% 30%, #ff6b6b, var(--don-red)); box-shadow: 0 3px 0 var(--don-red-dark), 0 4px 10px rgba(230,57,70,0.5); }
+        .preview-note.ka { background: radial-gradient(circle at 30% 30%, #74c0fc, var(--ka-blue)); box-shadow: 0 3px 0 var(--ka-blue-dark), 0 4px 10px rgba(72,149,239,0.5); }
         .feedback { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 3rem; font-weight: 900; pointer-events: none; opacity: 0; z-index: 100; }
         .feedback.show { animation: feedbackPop 0.6s ease-out forwards; }
         .feedback.success { color: var(--success-green); text-shadow: 3px 3px 0 var(--white); }
@@ -204,6 +210,32 @@
         .ranking-item.gold .ranking-score, .ranking-item.silver .ranking-score, .ranking-item.bronze .ranking-score { color: var(--black); }
         .ranking-empty { text-align: center; padding: 30px; color: #999; font-size: 1.1rem; }
         .ranking-buttons { display: flex; justify-content: center; margin-top: 25px; }
+        .option-card { background: rgba(255,255,255,0.98); border-radius: 30px; padding: 35px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 700px; width: 100%; }
+        .option-title { text-align: center; font-size: 2.2rem; font-weight: 900; color: var(--wood-brown); margin-bottom: 25px; }
+        .key-config-section { margin-bottom: 25px; }
+        .key-config-item { background: #f8f8f8; border-radius: 15px; padding: 20px; margin-bottom: 15px; border: 3px solid transparent; transition: all 0.3s; }
+        .key-config-item.don-pattern { border-color: var(--don-red); background: linear-gradient(135deg, #fff5f5 0%, #ffe0e0 100%); }
+        .key-config-item.ka-pattern { border-color: var(--ka-blue); background: linear-gradient(135deg, #f0f8ff 0%, #e0f0ff 100%); }
+        .key-config-item.mixed-pattern { border: 3px solid; border-image: linear-gradient(90deg, var(--don-red) 50%, var(--ka-blue) 50%) 1; }
+        .key-config-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .key-config-label { font-size: 1.3rem; font-weight: 900; }
+        .key-config-label.don { color: var(--don-red); }
+        .key-config-label.ka { color: var(--ka-blue); }
+        .key-config-label.mixed { background: linear-gradient(90deg, var(--don-red) 50%, var(--ka-blue) 50%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .key-inputs { display: flex; gap: 15px; justify-content: center; align-items: center; }
+        .key-input-group { flex: 1; text-align: center; }
+        .key-input-label { font-size: 0.9rem; color: #666; margin-bottom: 8px; font-weight: 700; }
+        .key-input-field { font-family: 'Zen Maru Gothic', sans-serif; font-size: 1.5rem; font-weight: 900; padding: 12px; border: 3px solid var(--bg-orange); border-radius: 10px; width: 80px; text-align: center; text-transform: uppercase; outline: none; transition: all 0.3s; background: var(--white); }
+        .key-input-field:focus { border-color: var(--don-red); box-shadow: 0 0 10px rgba(230,57,70,0.3); transform: scale(1.05); }
+        .key-input-field.invalid { border-color: var(--miss-pink); animation: inputShake 0.3s ease-in-out; }
+        @keyframes inputShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        .option-buttons { display: flex; flex-direction: column; gap: 12px; align-items: center; margin-top: 25px; }
+        .btn-reset { background: linear-gradient(180deg, #999 0%, #666 100%); color: var(--white); box-shadow: 0 6px 0 #444, 0 10px 20px rgba(0,0,0,0.3); font-size: 1.2rem; padding: 12px 35px; }
+        .btn-reset:hover { transform: translateY(-3px); box-shadow: 0 9px 0 #444, 0 15px 30px rgba(0,0,0,0.3); }
+        .btn-reset:active { transform: translateY(3px); box-shadow: 0 3px 0 #444, 0 5px 10px rgba(0,0,0,0.3); }
+        .validation-message { text-align: center; padding: 10px; margin-top: 10px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; display: none; }
+        .validation-message.error { background: #ffe0e0; color: var(--miss-pink); }
+        .validation-message.success { background: #e0ffe0; color: var(--success-green); }
         @media (max-width: 768px) {
             .title-main { font-size: 2.2rem; }
             .taiko-drum { width: 70px; height: 70px; }
@@ -246,6 +278,7 @@
             </div>
             <button class="btn btn-primary" onclick="startGame()">ゲームスタート！</button>
             <button class="btn btn-secondary" style="margin-top: 15px;" onclick="showRanking()">ランキング</button>
+            <button class="btn btn-secondary" style="margin-top: 15px;" onclick="showOptions()">オプション</button>
             <div class="key-guide">
                 <h3>🥁 操作方法 🥁</h3>
                 <div class="key-row">
@@ -333,21 +366,110 @@
                 </div>
             </div>
         </div>
+        <div id="option-screen" class="screen">
+            <div class="option-card">
+                <h2 class="option-title">⚙️ キー配置設定 ⚙️</h2>
+                <div class="key-config-section">
+                    <div class="key-config-item don-pattern">
+                        <div class="key-config-header">
+                            <span class="key-config-label don">ドド / ド</span>
+                        </div>
+                        <div class="key-inputs">
+                            <div class="key-input-group">
+                                <div class="key-input-label">左手</div>
+                                <input type="text" class="key-input-field" id="key-don-left" maxlength="1" readonly>
+                            </div>
+                            <div class="key-input-group">
+                                <div class="key-input-label">右手</div>
+                                <input type="text" class="key-input-field" id="key-don-right" maxlength="1" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="key-config-item mixed-pattern">
+                        <div class="key-config-header">
+                            <span class="key-config-label mixed">ドカ</span>
+                        </div>
+                        <div class="key-inputs">
+                            <div class="key-input-group">
+                                <div class="key-input-label">左手</div>
+                                <input type="text" class="key-input-field" id="key-donka-left" maxlength="1" readonly>
+                            </div>
+                            <div class="key-input-group">
+                                <div class="key-input-label">右手</div>
+                                <input type="text" class="key-input-field" id="key-donka-right" maxlength="1" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="key-config-item mixed-pattern">
+                        <div class="key-config-header">
+                            <span class="key-config-label mixed">カド</span>
+                        </div>
+                        <div class="key-inputs">
+                            <div class="key-input-group">
+                                <div class="key-input-label">左手</div>
+                                <input type="text" class="key-input-field" id="key-kadon-left" maxlength="1" readonly>
+                            </div>
+                            <div class="key-input-group">
+                                <div class="key-input-label">右手</div>
+                                <input type="text" class="key-input-field" id="key-kadon-right" maxlength="1" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="key-config-item ka-pattern">
+                        <div class="key-config-header">
+                            <span class="key-config-label ka">カカ / カ</span>
+                        </div>
+                        <div class="key-inputs">
+                            <div class="key-input-group">
+                                <div class="key-input-label">左手</div>
+                                <input type="text" class="key-input-field" id="key-ka-left" maxlength="1" readonly>
+                            </div>
+                            <div class="key-input-group">
+                                <div class="key-input-label">右手</div>
+                                <input type="text" class="key-input-field" id="key-ka-right" maxlength="1" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="validation-message" class="validation-message"></div>
+                <div class="option-buttons">
+                    <button class="btn btn-secondary btn-reset" onclick="resetToDefault()">デフォルトに戻す</button>
+                    <button class="btn btn-primary" onclick="saveKeyConfig()">設定を保存</button>
+                    <button class="btn btn-secondary" onclick="showTitle()">タイトルに戻る</button>
+                </div>
+            </div>
+        </div>
     </div>
     <div class="feedback" id="feedback"></div>
     <script>
-        let gameState = {
-            score: 0, timeLeft: 30, currentNotes: [], currentNoteIndex: 0,
-            currentInputPattern: '', combo: 0, totalHits: 0, totalMisses: 0,
-            completedPatterns: 0, timerInterval: null, isPlaying: false,
-            selectedMode: 7, currentRankingTab: 7
-        };
-        const PATTERNS = {
+        const DEFAULT_PATTERNS = {
             'ドド': ['f', 'j'],
             'ドカ': ['d', 'k'],
             'カド': ['r', 'u'],
             'カカ': ['e', 'i']
         };
+        
+        let gameState = {
+            score: 0, timeLeft: 30, currentNotes: [], currentNoteIndex: 0,
+            currentInputPattern: '', combo: 0, totalHits: 0, totalMisses: 0,
+            completedPatterns: 0, timerInterval: null, isPlaying: false,
+            selectedMode: 7, currentRankingTab: 7, nextNotes: [],
+            patterns: JSON.parse(JSON.stringify(DEFAULT_PATTERNS))
+        };
+        
+        // LocalStorageからキー配置を読み込む
+        function loadKeyConfig() {
+            const saved = localStorage.getItem('rollChallengeKeyConfig');
+            if (saved) {
+                try {
+                    gameState.patterns = JSON.parse(saved);
+                } catch (e) {
+                    gameState.patterns = JSON.parse(JSON.stringify(DEFAULT_PATTERNS));
+                }
+            }
+        }
+        
+        loadKeyConfig();
         function showScreen(screenId) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(screenId).classList.add('active');
@@ -367,9 +489,9 @@
         function startGame() {
             gameState = { ...gameState, score: 0, timeLeft: 30, currentNotes: [], currentNoteIndex: 0,
                 currentInputPattern: '', combo: 0, totalHits: 0, totalMisses: 0,
-                completedPatterns: 0, timerInterval: null, isPlaying: true };
+                completedPatterns: 0, timerInterval: null, isPlaying: true, nextNotes: [] };
             document.getElementById('current-mode').textContent = gameState.selectedMode + '連符';
-            updateDisplay(); generateNewPattern(); showScreen('game-screen');
+            updateDisplay(); generateNewPattern(); generateNextPattern(); showScreen('game-screen');
             gameState.timerInterval = setInterval(() => {
                 gameState.timeLeft--; updateTimerDisplay();
                 if (gameState.timeLeft <= 0) endGame();
@@ -392,22 +514,42 @@
             gameState.currentNotes.push({ note: singleNote, pairPattern: singlePattern, pairIndex: pairCount, isFirstOfPair: true, isSingle: true, status: 'pending' });
             updateCurrentInputPattern(); renderNotes();
         }
+        function generateNextPattern() {
+            const mode = gameState.selectedMode;
+            const pairCount = (mode - 1) / 2;
+            const pairPatterns = ['ドド', 'ドカ', 'カド', 'カカ'];
+            const singleNotes = ['ド', 'カ'];
+            gameState.nextNotes = [];
+            for (let i = 0; i < pairCount; i++) {
+                const pattern = pairPatterns[Math.floor(Math.random() * pairPatterns.length)];
+                gameState.nextNotes.push({ note: pattern[0], pairPattern: pattern, pairIndex: i, isFirstOfPair: true, status: 'pending' });
+                gameState.nextNotes.push({ note: pattern[1], pairPattern: pattern, pairIndex: i, isFirstOfPair: false, status: 'pending' });
+            }
+            const singleNote = singleNotes[Math.floor(Math.random() * singleNotes.length)];
+            const singlePattern = singleNote === 'ド' ? 'ドド' : 'カカ';
+            gameState.nextNotes.push({ note: singleNote, pairPattern: singlePattern, pairIndex: pairCount, isFirstOfPair: true, isSingle: true, status: 'pending' });
+            updateCurrentInputPattern();
+        }
         function updateCurrentInputPattern() {
             const currentNote = gameState.currentNotes[gameState.currentNoteIndex];
             if (currentNote) {
                 gameState.currentInputPattern = currentNote.pairPattern;
-                
-                // 次のペアのパターンを探す
-                const currentPairIndex = currentNote.pairIndex;
-                const nextPairNote = gameState.currentNotes.find(note => 
-                    note.pairIndex > currentPairIndex && note.isFirstOfPair && note.status === 'pending'
-                );
-                
-                if (nextPairNote) {
-                    document.getElementById('current-pattern').textContent = nextPairNote.pairPattern;
-                } else {
-                    document.getElementById('current-pattern').textContent = '--';
+            }
+            
+            // 次の問題の全パターンを表示
+            const container = document.getElementById('current-pattern');
+            container.innerHTML = '';
+            
+            if (gameState.nextNotes && gameState.nextNotes.length > 0) {
+                // 次の問題の全ての音符を赤丸・青丸で表示
+                for (let noteData of gameState.nextNotes) {
+                    const noteDiv = document.createElement('div');
+                    noteDiv.className = 'preview-note ' + (noteData.note === 'ド' ? 'don' : 'ka');
+                    container.appendChild(noteDiv);
                 }
+            } else {
+                // 次の問題がない場合は「--」を表示
+                container.textContent = '--';
             }
         }
         function renderNotes() {
@@ -425,12 +567,10 @@
         function handleKeyPress(e) {
             if (!gameState.isPlaying) return;
             const key = e.key.toLowerCase();
-            const validKeys = ['f', 'j', 'd', 'k', 'e', 'i', 'r', 'u'];
-            if (!validKeys.includes(key)) return;
             const currentNote = gameState.currentNotes[gameState.currentNoteIndex];
             if (!currentNote || currentNote.status !== 'pending') return;
             let pressedPattern = null;
-            for (const [pattern, keys] of Object.entries(PATTERNS)) {
+            for (const [pattern, keys] of Object.entries(gameState.patterns)) {
                 if (keys.includes(key)) { pressedPattern = pattern; break; }
             }
             if (pressedPattern === currentNote.pairPattern) {
@@ -471,7 +611,17 @@
                     gameState.score += 500; gameState.completedPatterns++;
                     showFeedback('完走！+500', 'complete');
                 }
-                setTimeout(() => { if (gameState.isPlaying) { generateNewPattern(); updateDisplay(); } }, 300);
+                setTimeout(() => {
+                    if (gameState.isPlaying) {
+                        // 次の問題を現在の問題にコピー
+                        gameState.currentNotes = JSON.parse(JSON.stringify(gameState.nextNotes));
+                        gameState.currentNoteIndex = 0;
+                        // 新しい次の問題を生成
+                        generateNextPattern();
+                        renderNotes();
+                        updateDisplay();
+                    }
+                }, 300);
             }
         }
         function showFeedback(text, type) {
@@ -549,7 +699,184 @@
             div.textContent = text;
             return div.innerHTML;
         }
-        document.addEventListener('DOMContentLoaded', () => showTitle());
+        
+        // オプション画面表示
+        function showOptions() {
+            loadKeyInputFields();
+            showScreen('option-screen');
+        }
+        
+        // キー入力フィールドに現在の設定を反映
+        function loadKeyInputFields() {
+            document.getElementById('key-don-left').value = gameState.patterns['ドド'][0].toUpperCase();
+            document.getElementById('key-don-right').value = gameState.patterns['ドド'][1].toUpperCase();
+            document.getElementById('key-donka-left').value = gameState.patterns['ドカ'][0].toUpperCase();
+            document.getElementById('key-donka-right').value = gameState.patterns['ドカ'][1].toUpperCase();
+            document.getElementById('key-kadon-left').value = gameState.patterns['カド'][0].toUpperCase();
+            document.getElementById('key-kadon-right').value = gameState.patterns['カド'][1].toUpperCase();
+            document.getElementById('key-ka-left').value = gameState.patterns['カカ'][0].toUpperCase();
+            document.getElementById('key-ka-right').value = gameState.patterns['カカ'][1].toUpperCase();
+            
+            // 各入力フィールドにクリックイベントを設定
+            setupKeyInputListeners();
+        }
+        
+        // キー入力フィールドのイベントリスナー設定
+        function setupKeyInputListeners() {
+            const fields = document.querySelectorAll('.key-input-field');
+            fields.forEach(field => {
+                field.onclick = function() {
+                    this.value = '';
+                    this.placeholder = 'キーを押してください';
+                    this.classList.remove('invalid');
+                    
+                    const tempHandler = (e) => {
+                        e.preventDefault();
+                        const key = e.key.toLowerCase();
+                        if (key.length === 1 && /[a-z]/.test(key)) {
+                            this.value = key.toUpperCase();
+                            this.placeholder = '';
+                            validateKeyConfig();
+                        }
+                        this.removeEventListener('keydown', tempHandler);
+                    };
+                    
+                    this.addEventListener('keydown', tempHandler);
+                };
+            });
+        }
+        
+        // キー配置の検証
+        function validateKeyConfig() {
+            const keys = [];
+            const fields = document.querySelectorAll('.key-input-field');
+            const msgEl = document.getElementById('validation-message');
+            
+            fields.forEach(field => {
+                if (field.value) keys.push(field.value.toLowerCase());
+            });
+            
+            // 重複チェック
+            const duplicates = keys.filter((key, index) => keys.indexOf(key) !== index);
+            
+            if (duplicates.length > 0) {
+                msgEl.textContent = '❌ キーが重複しています: ' + duplicates.map(k => k.toUpperCase()).join(', ');
+                msgEl.className = 'validation-message error';
+                msgEl.style.display = 'block';
+                
+                fields.forEach(field => {
+                    if (duplicates.includes(field.value.toLowerCase())) {
+                        field.classList.add('invalid');
+                    }
+                });
+                return false;
+            }
+            
+            // すべて入力済みかチェック
+            if (keys.length < 8) {
+                msgEl.textContent = 'すべてのキーを設定してください';
+                msgEl.className = 'validation-message error';
+                msgEl.style.display = 'block';
+                return false;
+            }
+            
+            msgEl.textContent = '✓ 設定可能です';
+            msgEl.className = 'validation-message success';
+            msgEl.style.display = 'block';
+            return true;
+        }
+        
+        // キー配置を保存
+        function saveKeyConfig() {
+            if (!validateKeyConfig()) return;
+            
+            gameState.patterns = {
+                'ドド': [
+                    document.getElementById('key-don-left').value.toLowerCase(),
+                    document.getElementById('key-don-right').value.toLowerCase()
+                ],
+                'ドカ': [
+                    document.getElementById('key-donka-left').value.toLowerCase(),
+                    document.getElementById('key-donka-right').value.toLowerCase()
+                ],
+                'カド': [
+                    document.getElementById('key-kadon-left').value.toLowerCase(),
+                    document.getElementById('key-kadon-right').value.toLowerCase()
+                ],
+                'カカ': [
+                    document.getElementById('key-ka-left').value.toLowerCase(),
+                    document.getElementById('key-ka-right').value.toLowerCase()
+                ]
+            };
+            
+            localStorage.setItem('rollChallengeKeyConfig', JSON.stringify(gameState.patterns));
+            updateKeyGuides();
+            
+            const msgEl = document.getElementById('validation-message');
+            msgEl.textContent = '✓ 設定を保存しました！';
+            msgEl.className = 'validation-message success';
+            msgEl.style.display = 'block';
+            
+            setTimeout(() => {
+                msgEl.style.display = 'none';
+            }, 2000);
+        }
+        
+        // デフォルトに戻す
+        function resetToDefault() {
+            gameState.patterns = JSON.parse(JSON.stringify(DEFAULT_PATTERNS));
+            localStorage.removeItem('rollChallengeKeyConfig');
+            loadKeyInputFields();
+            updateKeyGuides();
+            
+            const msgEl = document.getElementById('validation-message');
+            msgEl.textContent = '✓ デフォルト設定に戻しました';
+            msgEl.className = 'validation-message success';
+            msgEl.style.display = 'block';
+            
+            setTimeout(() => {
+                msgEl.style.display = 'none';
+            }, 2000);
+        }
+        
+        // キーガイドの表示を更新
+        function updateKeyGuides() {
+            // タイトル画面のキーガイド
+            const titleKeyRow = document.querySelector('#title-screen .key-row');
+            if (titleKeyRow) {
+                titleKeyRow.innerHTML = `
+                    <div class="key-item">
+                        <span class="key-pattern don">ドド / ド</span>
+                        <div class="key-buttons"><span class="key-btn">${gameState.patterns['ドド'][0].toUpperCase()}</span><span class="key-btn">${gameState.patterns['ドド'][1].toUpperCase()}</span></div>
+                    </div>
+                    <div class="key-item">
+                        <span class="key-pattern mixed">ドカ</span>
+                        <div class="key-buttons"><span class="key-btn">${gameState.patterns['ドカ'][0].toUpperCase()}</span><span class="key-btn">${gameState.patterns['ドカ'][1].toUpperCase()}</span></div>
+                    </div>
+                    <div class="key-item">
+                        <span class="key-pattern mixed-reverse">カド</span>
+                        <div class="key-buttons"><span class="key-btn">${gameState.patterns['カド'][0].toUpperCase()}</span><span class="key-btn">${gameState.patterns['カド'][1].toUpperCase()}</span></div>
+                    </div>
+                    <div class="key-item">
+                        <span class="key-pattern ka">カカ / カ</span>
+                        <div class="key-buttons"><span class="key-btn">${gameState.patterns['カカ'][0].toUpperCase()}</span><span class="key-btn">${gameState.patterns['カカ'][1].toUpperCase()}</span></div>
+                    </div>
+                `;
+            }
+            
+            // ゲーム画面のキーガイド
+            const gameKeyGuide = document.querySelector('#game-screen .game-key-guide');
+            if (gameKeyGuide) {
+                gameKeyGuide.innerHTML = `
+                    <div class="game-key-item"><span class="key-pattern don">ドド/ド</span><span class="key-btn">${gameState.patterns['ドド'][0].toUpperCase()}</span><span class="key-btn">${gameState.patterns['ドド'][1].toUpperCase()}</span></div>
+                    <div class="game-key-item"><span class="key-pattern mixed">ドカ</span><span class="key-btn">${gameState.patterns['ドカ'][0].toUpperCase()}</span><span class="key-btn">${gameState.patterns['ドカ'][1].toUpperCase()}</span></div>
+                    <div class="game-key-item"><span class="key-pattern mixed-reverse">カド</span><span class="key-btn">${gameState.patterns['カド'][0].toUpperCase()}</span><span class="key-btn">${gameState.patterns['カド'][1].toUpperCase()}</span></div>
+                    <div class="game-key-item"><span class="key-pattern ka">カカ/カ</span><span class="key-btn">${gameState.patterns['カカ'][0].toUpperCase()}</span><span class="key-btn">${gameState.patterns['カカ'][1].toUpperCase()}</span></div>
+                `;
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => { updateKeyGuides(); showTitle(); });
     </script>
 </body>
 </html>
